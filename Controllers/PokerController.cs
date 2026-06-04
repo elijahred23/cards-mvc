@@ -30,5 +30,22 @@ namespace CardsMvc.Controllers
 
             return View(hand);
         }
+     public IActionResult Compare()
+        {
+            _deck.Initialize();
+
+            _deck.Shuffle();
+
+            var playerHand = PokerHandEvaluator.Evaluate(Enumerable.Range(0, 5).Select(_ => _deck.Deal()));
+
+            var houseHand = PokerHandEvaluator.Evaluate(Enumerable.Range(0, 5).Select(_ => _deck.Deal()));
+
+            int comparison = playerHand.CompareTo(houseHand);
+
+            ViewBag.Message = comparison > 0 ? "Player Wins!" : (comparison < 0 ? "House Wins!" : "Split Pot!");
+
+            return View((Player: playerHand, House: houseHand));
+        }
     }
+    
 }

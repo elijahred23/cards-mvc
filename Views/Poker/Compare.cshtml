@@ -1,0 +1,27 @@
+@model (CardsMvc.Logic.Hand Player , CardsMvc.Logic.Hand House)
+
+
+<div class="text-center mt-5">
+    <h1 class="row mt-5">
+        @ViewBag.Message
+    </h1>
+    <div class="row mt-5">
+        <h2 class="text-primary">
+        Player: @Model.Player.Rank
+        </h2>
+        <div class="d-flex justify-content-center">
+            @foreach(var card in Model.Player.Cards) {
+                <div class="card p-2 m-1 shadow-sm">@card.DisplayName</div>
+            }
+        </div>
+        <div class="col-md-6">
+            <h2 class="text-danger">House @Model.House.Rank</h2>
+            <div class="d-flex justify-content-center">
+                @foreach (var card in Model.House.Cards){
+                    <div class="card p-2 m-1 shadow-sm">@card.DisplayName</div>
+                }
+            </div>
+        </div>
+    </div>
+    <a asp-action="Compare" class="btn btn-success btn-lg mt-5">Next Round</a>
+</div>

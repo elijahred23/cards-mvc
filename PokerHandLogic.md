@@ -147,3 +147,146 @@ A simple view to display the cards dealt and the resulting poker hand rank.
     <a asp-action="Index" class="btn btn-success btn-lg">Deal Again</a>
 </div>
 ```
+
+## Feature Implementation: Visual Hand Comparison
+
+This implementation allows the application to deal two hands (Player vs. House) and determine the winner using standard poker tie-breaking rules (kickers).
+
+### 1. The Hand Model
+
+To compare two hands, we need to track not just the `Rank` (e.g., One Pair), but also the specific card values used to break ties (the `Strength`).
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using CardsMvc.Models;
+
+namespace CardsMvc.Logic
+{
+    public class Hand : IComparable<Hand>
+    {
+        public List<Card> Cards { get; set; }
+        public PokerHandRank Rank { get; set; }
+        
+        // Strength contains card ranks sorted by priority (count, then rank)
+        // e.g., Two Pair (JJ, 22, A) would be [11, 2, 14]
+        public List<int> Strength { get; set; } 
+
+        public int CompareTo(Hand other)
+        {
+            if (other == null) return 1;
+
+            // 1. Compare Primary Hand Rank
+            if (this.Rank != other.Rank)
+                return this.Rank.CompareTo(other.Rank);
+
+            // 2. Compare Strength Sequence (Tie-breakers/Kickers)
+            for (int i = 0; i < this.Strength.Count; i++)
+            {
+                if (this.Strength[i] != other.Strength[i])
+                    return this.Strength[i].CompareTo(other.Strength[i]);
+            }
+
+            return 0; // Absolute tie (Split pot)
+        }
+    }
+}
+```
+
+### 2. Enhanced Evaluator
+
+The evaluator is updated to return the full `Hand` object. The `Strength` property is calculated by grouping cards by rank and sorting them by frequency, then by rank value.
+
+```csharp
+public static class PokerHandEvaluator
+{
+    public static Hand Evaluate(IEnumerable<Card> handCards)
+    {
+        var cards = handCards.ToList();
+        var sortedRanks = cards.Select(c => (int)c.Rank).OrderByDescending(r => r).ToList();
+        var distinctSuits = cards.Select(c => c.Suit).Distinct().Count();
+
+        bool isFlush = distinctSuits == 1;
+        bool isStraight = IsStraight(sortedRanks);
+        
+        var groups = cards.GroupBy(c => c.Rank)
+            .Select(g => new { Rank = (int)g.Key, Count = g.Count() })
+            .OrderByDescending(g => g.Count)
+            .ThenByDescending(g => g.Rank)
+            .ToList();
+
+        PokerHandRank rank;
+        List<int> strength = groups.Select(g => g.Rank).ToList();
+
+        if (isFlush && isStraight)
+        {
+            bool isAceLow = sortedRanks.SequenceEqual(new List<int> { 14, 5, 4, 3, 2 });
+            rank = (sortedRanks[0] == 14 && !isAceLow) ? PokerHandRank.RoyalFlush : PokerHandRank.StraightFlush;
+            strength = new List<int> { isAceLow ? 5 : sortedRanks[0] };
+        }
+        else if (groups[0].Count == 4) rank = PokerHandRank.FourOfAKind;
+        else if (groups[0].Count == 3 && groups[1].Count == 2) rank = PokerHandRank.FullHouse;
+        else if (isFlush) { rank = PokerHandRank.Flush; strength = sortedRanks; }
+        else if (isStraight)
+        {
+            rank = PokerHandRank.Straight;
+            bool isAceLow = sortedRanks.SequenceEqual(new List<int> { 14, 5, 4, 3, 2 });
+            strength = new List<int> { isAceLow ? 5 : sortedRanks[0] };
+        }
+        else if (groups[0].Count == 3) rank = PokerHandRank.ThreeOfAKind;
+        else if (groups[0].Count == 2 && groups[1].Count == 2) rank = PokerHandRank.TwoPair;
+        else if (groups[0].Count == 2) rank = PokerHandRank.OnePair;
+        else { rank = PokerHandRank.HighCard; strength = sortedRanks; }
+
+        return new Hand { Cards = cards, Rank = rank, Strength = strength };
+    }
+    
+    // ... IsStraight implementation ...
+}
+```
+
+### 3. Comparison Controller Action
+
+```csharp
+public IActionResult Compare()
+{
+    _deck.Initialize();
+    _deck.Shuffle();
+
+    var playerHand = PokerHandEvaluator.Evaluate(Enumerable.Range(0, 5).Select(_ => _deck.Deal()));
+    var houseHand = PokerHandEvaluator.Evaluate(Enumerable.Range(0, 5).Select(_ => _deck.Deal()));
+
+    int comparison = playerHand.CompareTo(houseHand);
+    
+    ViewBag.Message = comparison > 0 ? "Player Wins!" : (comparison < 0 ? "House Wins!" : "Split Pot!");
+    
+    return View((Player: playerHand, House: houseHand));
+}
+```
+
+### 4. Comparison View (`Compare.cshtml`)
+
+```html
+@model (CardsMvc.Logic.Hand Player, CardsMvc.Logic.Hand House)
+
+<div class="text-center mt-5">
+    <h1 class="display-2">@ViewBag.Message</h1>
+    
+    <div class="row mt-5">
+        <div class="col-md-6 border-end">
+            <h2 class="text-primary">Player: @Model.Player.Rank</h2>
+            <div class="d-flex justify-content-center">
+                @foreach(var card in Model.Player.Cards) { <div class="card p-2 m-1 shadow-sm">@card.DisplayName</div> }
+            </div>
+        </div>
+        <div class="col-md-6">
+            <h2 class="text-danger">House: @Model.House.Rank</h2>
+            <div class="d-flex justify-content-center">
+                @foreach(var card in Model.House.Cards) { <div class="card p-2 m-1 shadow-sm">@card.DisplayName</div> }
+            </div>
+        </div>
+    </div>
+    <a asp-action="Compare" class="btn btn-success btn-lg mt-5">Next Round</a>
+</div>
+```
