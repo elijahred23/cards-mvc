@@ -1,0 +1,29 @@
+## Build results
+[Dd]ebug/
+[Rr]elease/
+bin/
+obj/
+
+## Tooling
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Publishing
+publish/
+
+## MacOS
+.DS_Store
+
+## User Secrets
+secrets.json
+
+## Packages
+packages/
+
+## Testing
+TestResults/

@@ -1,0 +1,14 @@
+@model CardsMvc.Models.Deck
+<div class="container text-center py-5">
+    <h1 class="display-4 mb-4">MVC Deck of Cards</h1>
+    <p class="h4">Remaining Cards: <span class="badge bg-secondary">@Model.Cards.Count</span></p>
+    @if (TempData["Dealt"] != null) { <div class="alert alert-info mt-3">You just dealt: <strong>@TempData["Dealt"]</strong></div> }
+    <div class="mt-4 mb-5">
+        <form asp-action="Shuffle" method="post" class="d-inline"><button class="btn btn-primary btn-lg mx-1">Shuffle</button></form>
+        <form asp-action="Deal" method="post" class="d-inline"><button class="btn btn-success btn-lg mx-1" @(Model.Cards.Count == 0 ? "disabled" : "")>Deal Card</button></form>
+        <form asp-action="Reset" method="post" class="d-inline"><button class="btn btn-danger btn-lg mx-1">Reset</button></form>
+    </div>
+    <div class="row g-3 justify-content-center">
+        @foreach (var card in Model.Cards) { <div class="col-auto"><div class="card shadow-sm border-dark" style="width: 120px; height: 160px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa;">@card.DisplayName</div></div> }
+    </div>
+</div>
