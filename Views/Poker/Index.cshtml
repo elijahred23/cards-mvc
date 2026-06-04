@@ -1,0 +1,14 @@
+@model List<CardsMvc.Models.Card>
+<div class="text-center">
+    <h1 class="display-4">Poker Hand Evaluator</h1>
+    <h2 class="text-primary">Result: @ViewBag.Rank</h2>
+    <div class="d-flex justify-content-center my-4">
+        @foreach(var card in Model)
+        {
+            <div class="card mx-2 p-3 shadow-sm" style="width: 100px">
+                @card.DisplayName
+            </div>
+        }
+    </div>
+    <a asp-action="Index" class="btn btn-success btn-lg">Deal Again</a>
+</div>
