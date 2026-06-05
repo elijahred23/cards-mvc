@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using CardsMvc.Models;
 
+
 namespace CardsMvc.Logic
 {
     public class Hand : IComparable<Hand>

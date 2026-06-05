@@ -1,27 +1,75 @@
-@model (CardsMvc.Logic.Hand Player , CardsMvc.Logic.Hand House)
+@model (CardsMvc.Logic.Hand Player, CardsMvc.Logic.Hand House, List<CardsMvc.Models.Card> Community, List<CardsMvc.Models.Card> PlayerHole, List<CardsMvc.Models.Card> HouseHole)
 
+<div class="text-center mt-4">
+    <h1>Texas Hold'em Showdown</h1>
+    <h2 class="alert alert-info py-3 my-4 shadow-sm">@ViewBag.Message</h2>
 
-<div class="text-center mt-5">
-    <h1 class="row mt-5">
-        @ViewBag.Message
-    </h1>
-    <div class="row mt-5">
-        <h2 class="text-primary">
-        Player: @Model.Player.Rank
-        </h2>
-        <div class="d-flex justify-content-center">
-            @foreach(var card in Model.Player.Cards) {
-                <div class="card p-2 m-1 shadow-sm">@card.DisplayName</div>
+    <div class="community-cards-section mb-5 p-4 bg-light rounded shadow-sm border">
+        <h3 class="mb-3 text-muted text-uppercase small">Community Cards (The Board)</h3>
+        <div class="d-flex justify-content-center gap-3">
+            @foreach (var card in Model.Community)
+            {
+                <div class="card p-2 border-2 shadow-sm" style="width: 90px; min-height: 130px;">
+                    <div class="fw-bold fs-4">@card.Rank</div>
+                    <div class="text-muted">@card.Suit</div>
+                </div>
             }
         </div>
+    </div>
+
+    <div class="row g-5">
+        <!-- Player Side -->
+        <div class="col-md-6 border-end">
+            <div class="p-3 bg-primary bg-opacity-10 rounded shadow-sm border border-primary border-opacity-25">
+                <h3 class="text-primary border-bottom border-primary border-opacity-25 pb-2">Player Hand</h3>
+                <p class="lead">Best Rank: <strong>@Model.Player.Rank</strong></p>
+                
+                <h5 class="mt-4 text-muted small text-uppercase">Your Hole Cards</h5>
+                <div class="d-flex justify-content-center gap-2 mb-4">
+                    @foreach (var card in Model.PlayerHole)
+                    {
+                        <div class="card p-2 bg-primary text-white border-white shadow" style="width: 80px; min-height: 110px;">
+                             <div class="fw-bold fs-5">@card.Rank</div>
+                             <div class="small">@card.Suit</div>
+                        </div>
+                    }
+                </div>
+
+                <h5 class="text-muted small text-uppercase">Winning 5-Card Combination</h5>
+                <div class="d-flex justify-content-center gap-1">
+                    @foreach (var card in Model.Player.Cards)
+                    {
+                        <div class="card p-1 border-secondary shadow-sm" style="width: 60px; min-height: 90px;">
+                             <div class="fw-bold">@card.Rank</div>
+                             <div style="font-size: 0.7rem">@card.Suit</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- House Side -->
         <div class="col-md-6">
-            <h2 class="text-danger">House @Model.House.Rank</h2>
-            <div class="d-flex justify-content-center">
-                @foreach (var card in Model.House.Cards){
-                    <div class="card p-2 m-1 shadow-sm">@card.DisplayName</div>
-                }
+            <div class="p-3 bg-dark bg-opacity-10 rounded shadow-sm border border-dark border-opacity-25">
+                <h3 class="text-dark border-bottom border-dark border-opacity-25 pb-2">House Hand</h3>
+                <p class="lead">Best Rank: <strong>@Model.House.Rank</strong></p>
+
+                <h5 class="mt-4 text-muted small text-uppercase">House Hole Cards</h5>
+                <div class="d-flex justify-content-center gap-2 mb-4">
+                    @foreach (var card in Model.HouseHole)
+                    {
+                        <div class="card p-2 bg-dark text-white shadow" style="width: 80px; min-height: 110px;">
+                             <div class="fw-bold fs-5">@card.Rank</div>
+                             <div class="small">@card.Suit</div>
+                        </div>
+                    }
+                </div>
             </div>
         </div>
     </div>
-    <a asp-action="Compare" class="btn btn-success btn-lg mt-5">Next Round</a>
+
+    <div class="mt-5 pt-4">
+        <a asp-action="Compare" class="btn btn-success btn-lg px-5 shadow">Deal Showdown</a>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-lg ms-3">Back to Draw</a>
+    </div>
 </div>

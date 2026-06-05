@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text.RegularExpressions;
 using CardsMvc.Models;
@@ -79,47 +80,89 @@ namespace CardsMvc.Logic
             if(standard)return true;
             return sortedRanks.SequenceEqual(new List<int> {14, 5, 4, 3, 2});
         }
+    public static Hand GetBestHand(IEnumerable<Card> sevenCards)
+        {
+            var cards = sevenCards.ToList();
+
+            if(cards.Count != 7)
+            {
+                throw new ArgumentException("Seven cards are required for Texas Hold'em evaluation");
+            }
+
+            Hand bestHand = null;
+
+            for(int i = 0; i < cards.Count; i++)
+            {
+                for (int j = i + 1; j < cards.Count; j++)
+                {
+                    var fiveCardSubset = new List<Card>();
+
+                    for(int k = 0; k < cards.Count; k++)
+                    {
+                        if(k!=i && k != j)
+                        {
+                            fiveCardSubset.Add(cards[k]);
+                        }
+                    }
+                    var currentHand = Evaluate(fiveCardSubset);
+
+                    if(bestHand == null || currentHand.CompareTo(bestHand) > 0)
+                    {
+                        bestHand = currentHand;
+                    }
+                }
+            }
+
+            return bestHand;
+        }
 
         public static Hand Evaluate(IEnumerable<Card> handCards)
         {
-                var cards = handCards.ToList();
-                var sortedRanks = cards.Select(c => (int)c.Rank).OrderByDescending(r => r).ToList();
-                var distinctSuits = cards.Select(c => c.Suit).Distinct().Count();
+            var cards = handCards.ToList();
 
-                bool isFlush = distinctSuits == 1;
-                bool isStraight = IsStraight(sortedRanks);
-                
-                var groups = cards.GroupBy(c => c.Rank)
-                    .Select(g => new { Rank = (int)g.Key, Count = g.Count() })
-                    .OrderByDescending(g => g.Count)
-                    .ThenByDescending(g => g.Rank)
-                    .ToList();
+            var sortedRanks = cards.Select( c => 
+            (int)c.Rank).OrderByDescending(r => r).ToList();
 
-                PokerHandRank rank;
-                List<int> strength = groups.Select(g => g.Rank).ToList();
+            var distinctSuits = cards.Select(c => c.Suit).Distinct().Count();
 
-                if (isFlush && isStraight)
-                {
-                    bool isAceLow = sortedRanks.SequenceEqual(new List<int> { 14, 5, 4, 3, 2 });
-                    rank = (sortedRanks[0] == 14 && !isAceLow) ? PokerHandRank.RoyalFlush : PokerHandRank.StraightFlush;
-                    strength = new List<int> { isAceLow ? 5 : sortedRanks[0] };
-                }
-                else if (groups[0].Count == 4) rank = PokerHandRank.FourOfAKind;
-                else if (groups[0].Count == 3 && groups[1].Count == 2) rank = PokerHandRank.FullHouse;
-                else if (isFlush) { rank = PokerHandRank.Flush; strength = sortedRanks; }
-                else if (isStraight)
-                {
-                    rank = PokerHandRank.Straight;
-                    bool isAceLow = sortedRanks.SequenceEqual(new List<int> { 14, 5, 4, 3, 2 });
-                    strength = new List<int> { isAceLow ? 5 : sortedRanks[0] };
-                }
-                else if (groups[0].Count == 3) rank = PokerHandRank.ThreeOfAKind;
-                else if (groups[0].Count == 2 && groups[1].Count == 2) rank = PokerHandRank.TwoPair;
-                else if (groups[0].Count == 2) rank = PokerHandRank.OnePair;
-                else { rank = PokerHandRank.HighCard; strength = sortedRanks; }
 
-                return new Hand { Cards = cards, Rank = rank, Strength = strength };
+            bool isFlush = distinctSuits == 1;
+
+            bool isStraight = IsStraight(sortedRanks);
+
+            var groups = cards.GroupBy(c => c.Rank)
+            .Select(g => new {Rank =(int)g.Key, Count = g.Count()})
+            .OrderByDescending(g => g.Count)
+            .ThenByDescending(g=>g.Count)
+            .ToList();
+
+            PokerHandRank rank;
+
+            List<int> strength = groups.Select(g => g.Rank).ToList();
+
+            if(isFlush && isStraight)
+            {
+                bool isAceLow = sortedRanks.SequenceEqual(new List<int> {14, 5, 4, 3, 2});
+
+                rank = (sortedRanks[0] == 14 && !isAceLow) ? PokerHandRank.RoyalFlush : PokerHandRank.StraightFlush;
+
+                strength = new List<int> { isAceLow ? 5 : sortedRanks[0]};
+            }
+            else if (groups[0].Count == 4) rank = PokerHandRank.FourOfAKind;
+            else if (groups[0].Count == 3 && groups[1].Count == 2) rank = PokerHandRank.FullHouse;
+            else if (isFlush){ rank = PokerHandRank.Flush; strength = sortedRanks;}
+            else if (isStraight)
+            {
+                rank = PokerHandRank.Straight;
+                bool isAceLow = sortedRanks.SequenceEqual(new List<int> {14, 5, 4, 3, 2});
+                strength = new List<int> {isAceLow ? 5 : sortedRanks[0]};
+            }
+            else if (groups[0].Count == 3) rank = PokerHandRank.ThreeOfAKind;
+            else if (groups[0].Count == 2 && groups[1].Count == 2) rank = PokerHandRank.TwoPair; 
+            else if(groups[0].Count == 2) rank = PokerHandRank.OnePair; 
+            else {rank = PokerHandRank.HighCard; strength = sortedRanks;}
+
+            return new Hand {Cards=cards, Rank = rank, Strength=strength};
         }
     }
-    
 }

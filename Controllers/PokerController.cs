@@ -32,19 +32,27 @@ namespace CardsMvc.Controllers
         }
      public IActionResult Compare()
         {
-            _deck.Initialize();
+            var deck = new Deck();
 
-            _deck.Shuffle();
+            deck.Initialize();
+            deck.Shuffle();
 
-            var playerHand = PokerHandEvaluator.Evaluate(Enumerable.Range(0, 5).Select(_ => _deck.Deal()));
 
-            var houseHand = PokerHandEvaluator.Evaluate(Enumerable.Range(0, 5).Select(_ => _deck.Deal()));
+            var playerHole = Enumerable.Range(0, 2).Select(_ => deck.Deal()).ToList();
+            var houseHole = Enumerable.Range(0, 2).Select(_ => deck.Deal()).ToList();
 
-            int comparison = playerHand.CompareTo(houseHand);
+            var communityCards = Enumerable.Range(0, 5).Select(_ => deck.Deal()).ToList();
 
-            ViewBag.Message = comparison > 0 ? "Player Wins!" : (comparison < 0 ? "House Wins!" : "Split Pot!");
 
-            return View((Player: playerHand, House: houseHand));
+            var playerBest = PokerHandEvaluator.GetBestHand(playerHole.Concat(communityCards));
+            var houseBest = PokerHandEvaluator.GetBestHand(houseHole.Concat(communityCards));
+
+
+            int comparison = playerBest.CompareTo(houseBest);
+
+            ViewBag.Message = comparison > 0 ? "Player Wins!" : (comparison < 0 ? "House wins!" : "Split Pot!");
+
+            return View((Player: playerBest, House: houseBest, Community: communityCards, PlayerHole: playerHole, HouseHole: houseHole));
         }
     }
     
